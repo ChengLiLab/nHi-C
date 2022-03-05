@@ -1,0 +1,207 @@
+
+---
+title: "Plot figure"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,fig.width = 5,fig.height = 5)
+```
+
+## Fig.S1C  
+```{r}
+suppressMessages(library(data.table))
+files <- list.files("/lustre/user/liclab/pengt/projects/nucleus/bamfiles/hicbam/bedgraph/", pattern = "*Graph", full.names = T)
+loci <- c(4,5,6,11:13)
+sfiles <- files[loci]
+mat <- matrix(0, 303641, length(sfiles))
+mat <- data.frame(mat)
+for (i in 1:length(sfiles)) {
+  depth <- fread(sfiles[i])
+  mat[,i] <- unlist(depth$V6)
+}
+names(mat) <- c("HiC_Rep1",'HiC_Rep2','HiC_Rep3','nHiC_Rep1','nHiC_Rep2','nHiC_Rep3')
+mat_hic = mat
+files <- list.files("/lustre/user/liclab/pengt/projects/nucleus/bamfiles/dnabam/bedgraph/", pattern = "*Graph", full.names = T)
+loci <- c(4:7)
+sfiles <- files[loci]
+mat <- matrix(0, 303641, length(sfiles))
+mat <- data.frame(mat)
+for (i in 1:length(sfiles)) {
+  depth <- fread(sfiles[i])
+  mat[,i] <- unlist(depth$V6)
+}
+names(mat) <- c("NS_Rep1", "NS_Rep2","WGS_Rep1","WGS_Rep2")
+mat_dna = mat
+mat = data.frame(mat_dna,mat_hic)
+cp <- cor(mat, method = "pearson")
+suppressMessages(library(pheatmap))
+pheatmap(as.matrix(cp), fontsize_row = 10,display_numbers = T,
+         fontsize_number = 8,number_color = "black",
+         cellwidth=20,cellheight=20,
+         treeheight_col = 10,treeheight_row = 10,
+         border_color = "white",fontsize_col = 10,
+         colorRampPalette(c("white","red"))(100), 
+         main = "Pearson correlation of read depth")
+```
+
+## Fig.2A  
+```{r}
+chrom_trans = read.csv('/lustre/user/liclab/pengt/projects/nucleus/new/NAIR/source_data/2A.csv',row.names = 1)
+suppressMessages(library(pheatmap))
+suppressMessages(library(RColorBrewer))
+pheatmap(chrom_trans,color = rev(colorRampPalette(brewer.pal(5, "Spectral"))(121)),
+         cellwidth=8,cellheight=8)
+```
+
+## Fig.3A  
+```{r}
+hnad_cluster = read.csv('/lustre/user/liclab/pengt/projects/nucleus/new/NAIR/source_data/3A.csv',row.names = 1)
+suppressMessages(library(pheatmap))
+suppressMessages(library(RColorBrewer))
+pheatmap(hnad_cluster,
+              color = rev(colorRampPalette(c(brewer.pal(9,"Spectral")))(2000)),
+              show_rownames = F,show_colnames = F,
+              cellwidth=0.8,cellheight=0.8)
+```
+
+## Fig.S3C
+```{r}
+rc.set.cytoband<-function(cyto.info){
+  stainData <- as.character(cyto.info$Stain);
+  if(! is.null(cyto.info[["BandColor"]])) return(cyto.info) #skip if customized colors are specified
+  band.color <- rep(colors()[652], length(stainData)); #default yellow
+  # stains and color index are adapted from RCircos
+  stains <- c("gneg", "acen", "stalk", "gvar", "gpos", "gpos100", "gpos75", "gpos66", "gpos50", "gpos33", "gpos25")
+  color.index <- c(1, 552, 615, 418, 24, 24, 193, 203, 213, 223, 233)
+  for(i in 1:length(stains)){
+    band.color[stainData==stains[i]] = colors()[color.index[i]]
+  }
+  cyto.info[["BandColor"]] = band.color;
+  cyto.info
+}
+
+BandPlot <- function(band,nad, Bcomp){
+  #plot cyband
+  col <- rc.set.cytoband(band)
+  col.band <- col$BandColor
+  yb <- rep(0, nrow(band))
+  yt <- rep(0.6, nrow(band))
+  yb[which(band$Stain == "acen")] <- 0.25
+  yt[which(band$Stain == "acen")] <- 0.35
+  x = seq(0, 250e06, 10e06)
+  par(mar = c(0,2,0,2))
+  plot(x = x, y = rep(0, length(x)), type = "n", xlab = " ", ylab = " ", bty="n", axes = F)
+  rect(xleft = band$start, xright = band$stop, ybottom = yb, ytop = yt, col = col.band)
+  if(is.null(nad)==F){
+    rect(xleft = nad$start, xright = nad$stop, ybottom = rep(-0.6, nrow(nad)), ytop = rep(-0.3, nrow(nad)), col = "#6865DD", border = NA)
+  }
+  rect(xleft = Bcomp$start, xright = Bcomp$stop, ybottom = rep(-1, nrow(Bcomp)), ytop = rep(-0.7, nrow(Bcomp)), col = "#108972", border = NA)
+}
+suppressMessages(library(data.table))
+cytoband <- fread("/lustre/user/liclab/pengt/projects/nucleus/code/cytoBand.txt", header = F)
+names(cytoband) <- c("chr", "start","stop","band","Stain")
+band.wgs <- split(cytoband, f = cytoband$chr)
+hic.nad <- fread("/lustre/user/liclab/pengt/projects/nucleus/new/NAIR/hNAD.bed",header = F)
+hic.nad <- hic.nad[,1:3]
+names(hic.nad) <- c("chr", "start", "stop")
+hic.nad.wgs <- split(hic.nad, f=hic.nad$chr)
+
+bcomp <- fread("/lustre/user/liclab/pengt/projects/nucleus/new/NAIR/B_compartment.bed", header = F)
+bcomp <- bcomp[,1:3]
+names(bcomp) <- c("chr", "start", "stop")
+bcomp.wgs <- split(bcomp, f=bcomp$chr)
+layout(matrix(seq(1,23), nrow = 23, ncol = 1, byrow = T))
+for(i in 1:23){
+  if(i == 23){
+    chr = "chrX"
+  }else{
+    chr = paste0("chr", i)
+  }
+  
+  BandPlot(band.wgs[[chr]],hic.nad.wgs[[chr]], bcomp.wgs[[chr]])
+}
+```
+
+## Fig.S3D 
+```{r}
+setwd('/lustre/user/liclab/pengt/projects/nucleus/new/NAIR/')
+suppressMessages(library(dplyr))
+suppressMessages(library(ggplot2))
+suppressMessages(library(ggcharts))
+chr_info = read.table('/lustre/user/liclab/pengt/projects/tools/UCSC_tools/hg19.chrom.sizes')
+chr_final = data.frame(chr = paste0('chr',c(seq(1:22),'X')),length = 0)
+t = merge(chr_final,chr_info,by.x='chr',by.y='V1')
+chr_info = t[,c(1,3)]
+chr_info$ratio = 0
+setwd('/lustre/user/liclab/pengt/projects/nucleus/new/NAIR/')
+sub = read.table('./hNAD.bed')
+for(i in 1:23){
+  if(i==23){i = 'X'}
+  chr = paste0('chr',i)
+  t = sub[sub$V1==chr,]
+  t = sum(t$V3-t$V2)/chr_info[chr_info$chr==chr,2]
+  chr_info[chr_info$chr==chr,3] = t
+}
+chr_info$ratio = round(as.numeric(chr_info$ratio),4)*100
+chart <- chr_info %>%
+  bar_chart(chr, ratio,bar_color = '#2BA809')
+chart +
+  geom_text(aes(label = ratio, hjust = "left"))
+
+```
+
+## Fig.4B-4C 
+```{r}
+suppressMessages(library(ggpubr))
+dis = read.csv('/lustre/user/liclab/pengt/projects/nucleus/centromere/source_data/nad_nhic_dis.csv',header = F)
+dis = dis[dis$V3-dis$V2>80000,]
+dis$norm = log10(dis$V4/(dis$V3-dis$V2)*1000000)
+d = data.frame(distance = dis$V5,norm = dis$norm)
+d$pc <- predict(prcomp(~distance+norm, d))[,1]
+d$density <- fields::interp.surface(
+  MASS::kde2d(d$distance, d$norm), d[,c("distance", "norm")])
+#plot 4B
+ggplot(d[,], aes(distance, norm, color = pc, alpha = 1/density)) +
+  geom_point(shape = 16, size = 4, show.legend = FALSE) +
+  scale_color_gradient(low = "#0091ff", high = "#f0650e") +
+  scale_alpha(range = c(.45, .65))+theme_pubr()
+
+dis = read.csv('/lustre/user/liclab/pengt/projects/nucleus/centromere/source_data/nad_hic_dis.csv',header = F)
+dis = dis[dis$V3-dis$V2>80000,]
+dis$norm = log10(dis$V4/(dis$V3-dis$V2)*1000000)
+d = data.frame(distance = dis$V5,norm = dis$norm)
+d$pc <- predict(prcomp(~distance+norm, d))[,1]
+d$density <- fields::interp.surface(
+  MASS::kde2d(d$distance, d$norm), d[,c("distance", "norm")])
+#plot 4C
+ggplot(d, aes(distance, norm, color = pc, alpha = 1/density)) +
+  geom_point(shape = 16, size = 4, show.legend = FALSE) +
+  scale_color_gradient(low = "#0091ff", high = "#f0650e") +
+  scale_alpha(range = c(.45, .65))+theme_pubr()
+```
+## Fig.5A 
+```{r}
+suppressMessages(library(pheatmap))
+suppressMessages(library(RColorBrewer))
+histone = read.csv('/lustre/user/liclab/pengt/projects/nucleus/new/NAIR/source_data/5A.csv',header = T,row.names = 1)
+pheatmap(histone,show_rownames = F,scale = 'row',color = rev(colorRampPalette(c(brewer.pal(9,"RdBu")))(2000)),
+         cellwidth = 15,cellheight = 1,treeheight_col = 5)
+```
+
+## Fig.6B-6D
+```{r}
+#plot Fig.6B
+change = read.csv('/lustre/user/liclab/pengt/projects/nucleus/new/NAIR/source_data/6B.csv')
+boxplot(change,col= c('#87CEEB','#FFA500'),
+        ylim = c(0.8,1.4),outline = F,las = 1,
+        boxwex = .6,ylab = 'FoldChange(ActD/Ctrl)')
+#plot Fig.6D
+cis = read.csv('/lustre/user/liclab/pengt/projects/nucleus/new/NAIR/source_data/6D.csv')
+boxplot(cis,col= c('#F96A58','#BADB33'),
+        outline = F,las = 1,
+        boxwex = .6,ylab = 'FoldChange(ActD/Ctrl)')
+
+
+```
+
