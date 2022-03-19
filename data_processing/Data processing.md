@@ -76,7 +76,7 @@ mat <- mat[-which(mat$wgs == 0 & mat$n2 == 0), ]
 
 #### 5. HMM calling NADs
 
-##### Now, we can use the HMM model to call NADs. We have defined a function [getNAD()]() to process each log2nHi-C/Hi-C and log2NS/WGS ratio matrix, the Rsciprt for calling NADs using  log2NS/WGS ratio matrix are showed here:
+##### Now, we can use the HMM model to call NADs. We have defined a function [getNAD()](https://github.com/ChengLiLab/nHi-C/blob/main/data_processing/getNAD.R) to process each log2nHi-C/Hi-C and log2NS/WGS ratio matrix, the Rsciprt for calling NADs using  log2NS/WGS ratio matrix are showed here:
 
 ```R
 source('getNAD.R')
