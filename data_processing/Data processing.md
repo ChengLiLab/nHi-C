@@ -100,6 +100,8 @@ for(i in 1:23){
 	wgregions <- rbind(wgregions, getNAD(chrmat))
 
 }
+
+write.table(wgregions, "nad.list", row.names = F, col.names = F, quote = F, sep = "\t")
 ```
 
 #### 6. Merge and filter NADs
