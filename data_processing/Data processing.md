@@ -72,6 +72,8 @@ loci <- c(which(is.na(mat$ratio)), which(is.infinite(mat$ratio)))
 mat$ratio[loci] <- mat$n2[loci] - mat$wgs[loci]
 
 mat <- mat[-which(mat$wgs == 0 & mat$n2 == 0), ]
+
+saveRDS(mat, 'mat.rds')
 ```
 
 #### 5. HMM calling NADs
@@ -80,6 +82,8 @@ mat <- mat[-which(mat$wgs == 0 & mat$n2 == 0), ]
 
 ```R
 source('getNAD.R')
+
+mat <- readRDS('mat.rds')
 
 wgmat <- split(mat, f = mat$chromosome)
 
