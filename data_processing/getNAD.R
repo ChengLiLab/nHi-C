@@ -1,3 +1,4 @@
+library(tileHMM)
 .get.init <- function (data, nstate = 2, iter.max = 20, nstart = 3) 
 {
   cluster <- kmeans(data, nstate, iter.max = iter.max, nstart = nstart)
